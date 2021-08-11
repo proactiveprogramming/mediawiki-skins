@@ -695,15 +695,15 @@ class TimelessTemplate extends BaseTemplate {
 			$headerMsg = 'timeless-notloggedin';
 		}
 		$html .= Html::openElement( 'div', [ 'id' => 'user-tools' ] );
-
-		$html .= Html::rawElement( 'div', [ 'id' => 'personal' ],
-			Html::rawElement( 'h2', [], $this->makeAvatar( $user ) . 
+		$html .= Html::rawElement( 'div', [ 'id' => 'personal' ],   
+			Html::rawElement( 'h2', [], 
 				Html::element( 'span', [], $dropdownHeader )
 			) .
 			Html::rawElement( 'div', [ 'id' => 'personal-inner', 'class' => 'dropdown' ],
 				$this->getPortlet( 'personal', $personalTools, $headerMsg )
 			)
 		);
+		$html .= "&nbsp;&nbsp;" . $this->makeAvatar( $user );
 
 		// Extra icon stuff (echo etc)
 		if ( !empty( $extraTools ) ) {

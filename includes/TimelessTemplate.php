@@ -697,13 +697,12 @@ class TimelessTemplate extends BaseTemplate {
 		$html .= Html::openElement( 'div', [ 'id' => 'user-tools' ] );
 		$html .= Html::rawElement( 'div', [ 'id' => 'personal' ],   
 			Html::rawElement( 'h2', [], 
-				Html::element( 'span', [], $dropdownHeader )
+				$this->makeAvatar( $user ) . "&nbsp;&nbsp;" . Html::element( 'span', [], $dropdownHeader )
 			) .
 			Html::rawElement( 'div', [ 'id' => 'personal-inner', 'class' => 'dropdown' ],
 				$this->getPortlet( 'personal', $personalTools, $headerMsg )
 			)
 		);
-		$html .= "&nbsp;&nbsp;" . $this->makeAvatar( $user );
 
 		// Extra icon stuff (echo etc)
 		if ( !empty( $extraTools ) ) {

@@ -1,14 +1,14 @@
 {
 	"name": "Timeless",
-	"version": "0.9.1",
-	"author": "Isarra Yos",
+	"version": "1.0.0",
+	"author": "Melissa Janine Newman (Proactive Programming), Isarra Yos",
 	"url": "https://www.mediawiki.org/wiki/Skin:Timeless",
 	"descriptionmsg": "timeless-desc",
 	"namemsg": "skinname-timeless",
 	"license-name": "GPL-2.0-or-later",
 	"type": "skin",
 	"requires": {
-		"MediaWiki": ">= 1.35"
+		"MediaWiki": ">= 1.39"
 	},
 	"ValidSkinNames": {
 		"timeless": {
@@ -76,6 +76,9 @@
 			},
 			"styles": {
 				"resources/libraries/normalise.css": {
+					"media": "screen"
+				},
+				"resources/libraries/w3.css": {
 					"media": "screen"
 				},
 				"resources/libraries/shared.css": {

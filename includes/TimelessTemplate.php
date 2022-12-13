@@ -5,7 +5,24 @@
  * @ingroup Skins
  */
 
+namespace MediaWiki\Skin\Timeless;
+
+use BaseTemplate;
+use File;
+use Html;
+use Linker;
 use MediaWiki\MediaWikiServices;
+use ResourceLoaderSkinModule;
+use Sanitizer;
+use SpecialPage;
+use wAvatar;
+
+//use MediaWiki\MainConfigNames;
+//use MediaWiki\MediaWikiServices;
+//use MediaWiki\Permissions\Authority;
+//use MediaWiki\ResourceLoader as RL;
+//use MediaWiki\Skin\Timeless\wAvatar
+// SocialProfile/UserProfile/SpecialUploadAvatar.php
 
 class TimelessTemplate extends BaseTemplate {
 
@@ -48,10 +65,7 @@ class TimelessTemplate extends BaseTemplate {
 		$this->pileOfTools = $this->getPageTools();
 		$userLinks = $this->getUserLinks();
 
-		// Open html, body elements, etc
-		$html = $this->get( 'headelement' );
-
-		$html .= Html::openElement( 'div', [ 'id' => 'mw-wrapper', 'class' => $userLinks['class'] ] );
+		$html = Html::openElement( 'div', [ 'id' => 'mw-wrapper', 'class' => $userLinks['class'] ] );
 
 		$html .= Html::rawElement( 'div', [ 'id' => 'mw-header-container', 'class' => 'ts-container' ],
 			Html::rawElement( 'div', [ 'id' => 'mw-header', 'class' => 'ts-inner' ],
@@ -96,61 +110,14 @@ class TimelessTemplate extends BaseTemplate {
 
 		$html .= Html::rawElement( 'div',
 			[ 'id' => 'mw-footer-container', 'class' => 'mw-footer-container ts-container' ],
-			Html::rawElement( 'div', [ 'id' => 'mw-footer', 'class' => 'mw-footer ts-inner' ],
-				$this->getFooter()
-			)
+			$this->getFooterBlock( [ 'class' => [ 'mw-footer', 'ts-inner' ], 'id' => 'mw-footer' ] )
 		);
 
 		$html .= Html::closeElement( 'div' );
 
-		// BaseTemplate::printTrail() stuff (has no get version)
-		// Required for RL to run
-		$html .= MWDebug::getDebugHTML( $this->getSkin()->getContext() );
-		$html .= $this->get( 'bottomscripts' );
-		$html .= $this->get( 'reporttime' );
-
-		$html .= Html::closeElement( 'body' );
-		$html .= Html::closeElement( 'html' );
-
 		// The unholy echo
 		echo $html;
 	}
-
-	/**
-	 * Return an inline SVG containing the inputted icon, as a string.
-	 *
-	 * @param string|null $iconName string or null if no icon
-	 * @return string|bool string if the icon exists, otherwise false
-	 */
-	private function makeIcon( $iconName ) {
-		// return null if $iconName isn't a string or is the empty string
-		if ( !is_string( $iconName ) || $iconName === '' ) {
-			return '';
-		}
-
-		// Sometimes $iconName may be of the form "nstab-something" if it represents
-		// an article button (like "user page"). In this case, there are many
-		// possible suffixes like "-user", "-project", etc. We can't possibly
-		// predict all those suffixes since some of them may represent namespaces
-		// that one wiki in particular has defined. As such, we will strip the
-		// suffix to leave just "nstab" for every namespace. That way article
-		// buttons always use the same icon.
-		if ( strpos( $iconName, 'nstab' ) === 0 ) {
-			$iconName = 'nstab';
-		}
-
-		// get the icon
-		$direction_dependent_url = __DIR__ . '/../refreshed/icons/' . $this->getSkin()->getLanguage()->getDir() . '/' . $iconName . '.svg';
-		$direction_independent_url = __DIR__ . '/../refreshed/icons/no-direction/' . $iconName . '.svg';
-		if ( file_exists( $direction_dependent_url ) ) {
-			return file_get_contents( $direction_dependent_url );
-		} elseif ( file_exists( $direction_independent_url ) ) {
-			return file_get_contents( $direction_independent_url );
-		} else {
-			return false;
-		}
-	}
-
 
 	/**
 	 * Return the user's avatar element as a string (if using SocialProfile).
@@ -220,7 +187,6 @@ class TimelessTemplate extends BaseTemplate {
 		return $this->getMsg( 'login' )->text();
 	}
 
-
 	/**
 	 * Generate the page content block
 	 * Broken out here due to the excessive indenting, or stuff.
@@ -228,20 +194,13 @@ class TimelessTemplate extends BaseTemplate {
 	 * @return string html
 	 */
 	protected function getContentBlock() {
+		$templateData = $this->getSkin()->getTemplateData();
 		$html = Html::rawElement(
 			'div',
 			[ 'id' => 'content', 'class' => 'mw-body',  'role' => 'main' ],
 			$this->getSiteNotices() .
 			$this->getIndicators() .
-			Html::rawElement(
-				'h1',
-				[
-					'id' => 'firstHeading',
-					'class' => 'firstHeading',
-					'lang' => $this->get( 'pageLanguage' )
-				],
-				$this->get( 'title' )
-			) .
+			$templateData[ 'html-title-heading' ] .
 			Html::rawElement( 'div', [ 'id' => 'bodyContentOuter' ],
 				Html::rawElement( 'div', [ 'id' => 'siteSub' ], $this->getMsg( 'tagline' )->parse() ) .
 				Html::rawElement( 'div', [ 'id' => 'mw-page-header-links' ],
@@ -266,7 +225,7 @@ class TimelessTemplate extends BaseTemplate {
 					)
 				) .
 				$this->getClear() .
-				Html::rawElement( 'div', [ 'class' => 'mw-body-content', 'id' => 'bodyContent' ],
+				Html::rawElement( 'div', [ 'id' => 'bodyContent' ],
 					$this->getContentSub() .
 					$this->get( 'bodytext' ) .
 					$this->getClear()
@@ -306,6 +265,7 @@ class TimelessTemplate extends BaseTemplate {
 	 * @suppress PhanTypeMismatchArgumentNullable
 	 */
 	protected function getPortlet( $name, $content, $msg = null, $setOptions = [] ) {
+		$skin = $this->getSkin();
 		// random stuff to override with any provided options
 		$options = array_merge( [
 			'role' => 'navigation',
@@ -349,13 +309,13 @@ class TimelessTemplate extends BaseTemplate {
 			$contentText .= $options['list-prepend'];
 			foreach ( $content as $key => $item ) {
 				if ( is_array( $options['text-wrapper'] ) ) {
-					$contentText .= $this->makeListItem(
+					$contentText .= $skin->makeListItem(
 						$key,
 						$item,
 						[ 'text-wrapper' => $options['text-wrapper'] ]
 					);
 				} else {
-					$contentText .= $this->makeListItem(
+					$contentText .= $skin->makeListItem(
 						$key,
 						$item
 					);
@@ -386,7 +346,16 @@ class TimelessTemplate extends BaseTemplate {
 			$bodyDivOptions['id'] = $options['body-id'];
 		}
 
-		$afterPortlet = $this->getAfterPortlet( $name );
+		$afterPortlet = '';
+		$content = $this->getSkin()->getAfterPortlet( $name );
+		if ( $content !== '' ) {
+			$afterPortlet = Html::rawElement(
+				'div',
+				[ 'class' => [ 'after-portlet', 'after-portlet-' . $name ] ],
+				$content
+			);
+		}
+
 		if ( $name === 'lang' ) {
 			$this->afterLangPortlet = $afterPortlet;
 		}
@@ -422,6 +391,114 @@ class TimelessTemplate extends BaseTemplate {
 		}
 
 		return array_merge( $class, $extraClasses );
+	}
+
+	/**
+	 * Better renderer for getFooterIcons and getFooterLinks, based on Vector's HTML output
+	 * (as of 2016)
+	 *
+	 * @param array $setOptions Miscellaneous other options
+	 * * 'id' for footer id
+	 * * 'class' for footer class
+	 * * 'order' to determine whether icons or links appear first: 'iconsfirst' or links, though in
+	 *   practice we currently only check if it is or isn't 'iconsfirst'
+	 * * 'link-prefix' to set the prefix for all link and block ids; most skins use 'f' or 'footer',
+	 *   as in id='f-whatever' vs id='footer-whatever'
+	 * * 'link-style' to pass to getFooterLinks: "flat" to disable categorisation of links in a
+	 *   nested array
+	 *
+	 * @return string html
+	 */
+	protected function getFooterBlock( $setOptions = [] ) {
+		// Set options and fill in defaults
+		$options = $setOptions + [
+			'id' => 'footer',
+			'class' => 'mw-footer',
+			'order' => 'iconsfirst',
+			'link-prefix' => 'footer',
+			'link-style' => null
+		];
+
+		// phpcs:ignore Generic.Files.LineLength.TooLong
+		'@phan-var array{id:string,class:string,order:string,link-prefix:string,link-style:?string} $options';
+		$validFooterIcons = $this->get( 'footericons' );
+		$validFooterLinks = $this->getFooterLinks( $options['link-style'] );
+
+		$html = '';
+
+		$html .= Html::openElement( 'div', [
+			'id' => $options['id'],
+			'class' => $options['class'],
+			'role' => 'contentinfo',
+			'lang' => $this->get( 'userlang' ),
+			'dir' => $this->get( 'dir' )
+		] );
+
+		$iconsHTML = '';
+		if ( count( $validFooterIcons ) > 0 ) {
+			$iconsHTML .= Html::openElement( 'ul', [ 'id' => "{$options['link-prefix']}-icons" ] );
+			foreach ( $validFooterIcons as $blockName => $footerIcons ) {
+				$iconsHTML .= Html::openElement( 'li', [
+					'id' => Sanitizer::escapeIdForAttribute(
+						"{$options['link-prefix']}-{$blockName}ico"
+					),
+					'class' => 'footer-icons'
+				] );
+				foreach ( $footerIcons as $icon ) {
+					$iconsHTML .= $this->getSkin()->makeFooterIcon( $icon );
+				}
+				$iconsHTML .= Html::closeElement( 'li' );
+			}
+			$iconsHTML .= Html::closeElement( 'ul' );
+		}
+
+		$linksHTML = '';
+		if ( count( $validFooterLinks ) > 0 ) {
+			if ( $options['link-style'] === 'flat' ) {
+				$linksHTML .= Html::openElement( 'ul', [
+					'id' => "{$options['link-prefix']}-list",
+					'class' => 'footer-places'
+				] );
+				foreach ( $validFooterLinks as $link ) {
+					$linksHTML .= Html::rawElement(
+						'li',
+						[ 'id' => Sanitizer::escapeIdForAttribute( $link ) ],
+						$this->get( $link )
+					);
+				}
+				$linksHTML .= Html::closeElement( 'ul' );
+			} else {
+				$linksHTML .= Html::openElement( 'div', [ 'id' => "{$options['link-prefix']}-list" ] );
+				foreach ( $validFooterLinks as $category => $links ) {
+					$linksHTML .= Html::openElement( 'ul',
+						[ 'id' => Sanitizer::escapeIdForAttribute(
+							"{$options['link-prefix']}-{$category}"
+						) ]
+					);
+					foreach ( $links as $link ) {
+						$linksHTML .= Html::rawElement(
+							'li',
+							[ 'id' => Sanitizer::escapeIdForAttribute(
+								"{$options['link-prefix']}-{$category}-{$link}"
+							) ],
+							$this->get( $link )
+						);
+					}
+					$linksHTML .= Html::closeElement( 'ul' );
+				}
+				$linksHTML .= Html::closeElement( 'div' );
+			}
+		}
+
+		if ( $options['order'] === 'iconsfirst' ) {
+			$html .= $iconsHTML . $linksHTML;
+		} else {
+			$html .= $linksHTML . $iconsHTML;
+		}
+
+		$html .= $this->getClear() . Html::closeElement( 'div' );
+
+		return $html;
 	}
 
 	/**
@@ -464,7 +541,6 @@ class TimelessTemplate extends BaseTemplate {
 	 */
 	protected function getLogo( $id = 'p-logo', $part = 'both' ) {
 		$html = '';
-		$language = $this->getSkin()->getLanguage();
 		$config = $this->getSkin()->getContext()->getConfig();
 
 		$html .= Html::openElement(
@@ -475,14 +551,25 @@ class TimelessTemplate extends BaseTemplate {
 				'role' => 'banner'
 			]
 		);
+		$logos = ResourceLoaderSkinModule::getAvailableLogos( $config );
 		if ( $part !== 'image' ) {
 			$wordmarkImage = $this->getLogoImage( $config->get( 'TimelessWordmark' ), true );
+			if ( !$wordmarkImage && isset( $logos['wordmark'] ) ) {
+				$wordmarkData = $logos['wordmark'];
+				$wordmarkImage = Html::element( 'img', [
+					'src' => $wordmarkData['src'],
+					'height' => $wordmarkData['height'] ?? null,
+					'width' => $wordmarkData['width'] ?? null,
+				] );
+			}
 
 			$titleClass = '';
 			$siteTitle = '';
 			if ( !$wordmarkImage ) {
-				if ( $language->hasVariants() ) {
-					$siteTitle = $language->convert( $this->getMsg( 'timeless-sitetitle' )->escaped() );
+				$langConv = MediaWikiServices::getInstance()->getLanguageConverterFactory()
+					->getLanguageConverter( $this->getSkin()->getLanguage() );
+				if ( $langConv->hasVariants() ) {
+					$siteTitle = $langConv->convert( $this->getMsg( 'timeless-sitetitle' )->escaped() );
 				} else {
 					$siteTitle = $this->getMsg( 'timeless-sitetitle' )->escaped();
 				}
@@ -504,6 +591,14 @@ class TimelessTemplate extends BaseTemplate {
 		}
 		if ( $part !== 'text' ) {
 			$logoImage = $this->getLogoImage( $config->get( 'TimelessLogo' ) );
+			if ( $logoImage === false ) {
+				$logoSrc = $logos['svg'] ?? $logos['icon'] ?? '';
+				if ( $logoSrc !== '' ) {
+					$logoImage = Html::element( 'img', [
+						'src' => $logoSrc,
+					] );
+				}
+			}
 
 			$html .= Html::rawElement(
 				'a',
@@ -528,9 +623,8 @@ class TimelessTemplate extends BaseTemplate {
 	 * @return string html
 	 */
 	protected function getSearch() {
-		$html = '';
-
-		$html .= Html::openElement( 'div', [ 'class' => 'mw-portlet', 'id' => 'p-search' ] );
+		$skin = $this->getSkin();
+		$html = Html::openElement( 'div', [ 'class' => 'mw-portlet', 'id' => 'p-search' ] );
 
 		$html .= Html::rawElement(
 			'h3',
@@ -541,25 +635,23 @@ class TimelessTemplate extends BaseTemplate {
 		$html .= Html::rawElement( 'form', [ 'action' => $this->get( 'wgScript' ), 'id' => 'searchform' ],
 			Html::rawElement( 'div', [ 'id' => 'simpleSearch' ],
 				Html::rawElement( 'div', [ 'id' => 'searchInput-container' ],
-					$this->makeSearchInput( [
+					$skin->makeSearchInput( [
 						'id' => 'searchInput'
 					] )
 				) .
 				Html::hidden( 'title', $this->get( 'searchtitle' ) ) .
-				$this->makeSearchButton(
+				$skin->makeSearchButton(
 					'fulltext',
 					[ 'id' => 'mw-searchButton', 'class' => 'searchButton mw-fallbackSearchButton' ]
 				) .
-				$this->makeSearchButton(
+				$skin->makeSearchButton(
 					'go',
 					[ 'id' => 'searchButton', 'class' => 'searchButton' ]
 				)
 			)
 		);
 
-		$html .= Html::closeElement( 'div' );
-
-		return $html;
+		return $html . Html::closeElement( 'div' );
 	}
 
 	/**
@@ -585,9 +677,7 @@ class TimelessTemplate extends BaseTemplate {
 			$html .= $this->getPortlet( $name, $content );
 		}
 
-		$html = $this->getSidebarChunk( 'site-navigation', 'navigation', $html );
-
-		return $html;
+		return $this->getSidebarChunk( 'site-navigation', 'navigation', $html );
 	}
 
 	/**
@@ -626,8 +716,7 @@ class TimelessTemplate extends BaseTemplate {
 	 * @return string html
 	 */
 	protected function getPageToolSidebar() {
-		$pageTools = '';
-		$pageTools .= $this->getPortlet(
+		$pageTools = $this->getPortlet(
 			'cactions',
 			$this->pileOfTools['page-secondary'],
 			'timeless-pageactions'
@@ -659,13 +748,18 @@ class TimelessTemplate extends BaseTemplate {
 	 * (for width adjustments)
 	 */
 	protected function getUserLinks() {
-		$user = $this->getSkin()->getUser();
-		$personalTools = $this->getPersonalTools();
+		$skin = $this->getSkin();
+		$user = $skin->getUser();
+		$personalTools = $skin->getPersonalToolsForMakeListItem( $this->get( 'personal_urls' ) );
 		// Preserve standard username label to allow customisation (T215822)
 		$userName = $personalTools['userpage']['links'][0]['text'] ?? $user->getName();
 
-		$html = '';
 		$extraTools = [];
+
+		// Remove anon placeholder
+		if ( isset( $personalTools['anonuserpage'] ) ) {
+			unset( $personalTools['anonuserpage'] );
+		}
 
 		// Remove Echo badges
 		if ( isset( $personalTools['notifications-alert'] ) ) {
@@ -694,10 +788,12 @@ class TimelessTemplate extends BaseTemplate {
 			$dropdownHeader = $this->getMsg( 'timeless-anonymous' )->text();
 			$headerMsg = 'timeless-notloggedin';
 		}
-		$html .= Html::openElement( 'div', [ 'id' => 'user-tools' ] );
-		$html .= Html::rawElement( 'div', [ 'id' => 'personal' ],   
-			Html::rawElement( 'h2', [], 
-				$this->makeAvatar( $user ) . "&nbsp;&nbsp;" . Html::element( 'span', [], $dropdownHeader )
+		$html = Html::openElement( 'div', [ 'id' => 'user-tools' ] );
+
+		$html .= Html::rawElement( 'div', [ 'id' => 'personal' ],
+			Html::rawElement( 'h2', [],
+				$this->makeAvatar( $user ) . "&nbsp;&nbsp;" . 
+				Html::element( 'span', [], $dropdownHeader )
 			) .
 			Html::rawElement( 'div', [ 'id' => 'personal-inner', 'class' => 'dropdown' ],
 				$this->getPortlet( 'personal', $personalTools, $headerMsg )
@@ -708,7 +804,7 @@ class TimelessTemplate extends BaseTemplate {
 		if ( !empty( $extraTools ) ) {
 			$iconList = '';
 			foreach ( $extraTools as $key => $item ) {
-				$iconList .= $this->makeListItem( $key, $item );
+				$iconList .= $skin->makeListItem( $key, $item );
 			}
 
 			$html .= Html::rawElement(
@@ -750,18 +846,14 @@ class TimelessTemplate extends BaseTemplate {
 	 * @return string html
 	 */
 	protected function getContentSub() {
-		$html = '';
-
-		$html .= Html::openElement( 'div', [ 'id' => 'contentSub' ] );
+		$html = Html::openElement( 'div', [ 'id' => 'contentSub' ] );
 		if ( $this->data['subtitle'] ) {
 			$html .= $this->get( 'subtitle' );
 		}
 		if ( $this->data['undelete'] ) {
 			$html .= $this->get( 'undelete' );
 		}
-		$html .= Html::closeElement( 'div' );
-
-		return $html;
+		return $html . Html::closeElement( 'div' );
 	}
 
 	/**
@@ -812,7 +904,9 @@ class TimelessTemplate extends BaseTemplate {
 
 		// Tools specific to the page
 		$pileOfEditTools = [];
-		foreach ( $this->data['content_navigation'] as $navKey => $navBlock ) {
+		$contentNavigation = $this->data['content_navigation'];
+
+		foreach ( $contentNavigation as $navKey => $navBlock ) {
 			// Just use namespaces items as they are
 			if ( $navKey == 'namespaces' ) {
 				if ( $namespace < 0 && count( $navBlock ) < 2 ) {
@@ -848,7 +942,7 @@ class TimelessTemplate extends BaseTemplate {
 			'class' => 'dropdown-toggle'
 		];
 		// @phan-suppress-next-line PhanTypePossiblyInvalidDimOffset
-		if ( $this->sidebar['LANGUAGES'] !== false || $sortedPileOfTools['variants']
+		if ( !empty( $this->sidebar['LANGUAGES'] ) || $sortedPileOfTools['variants']
 			|| isset( $this->otherProjects ) ) {
 			$pileOfTools['languages'] = [
 				'text' => $this->getMsg( 'timeless-languages' )->escaped(),
@@ -860,8 +954,6 @@ class TimelessTemplate extends BaseTemplate {
 		// This is really dumb, and you're an idiot for doing it this way.
 		// Obviously if you're not the idiot who did this, I don't mean you.
 		foreach ( $pileOfEditTools as $navKey => $navBlock ) {
-			$currentSet = null;
-
 			if ( in_array( $navKey, [
 				'watch',
 				'unwatch'
@@ -956,7 +1048,6 @@ class TimelessTemplate extends BaseTemplate {
 		$skin = $this->getSkin();
 		$catHeader = 'categories';
 		$catList = '';
-		$html = '';
 
 		$allCats = $skin->getOutput()->getCategoryLinks();
 		if ( !empty( $allCats ) ) {
@@ -973,7 +1064,10 @@ class TimelessTemplate extends BaseTemplate {
 
 			if ( isset( $allCats['hidden'] ) ) {
 				$hiddenCatClass = [ 'mw-hidden-catlinks' ];
-				if ( $skin->getUser()->getBoolOption( 'showhiddencats' ) ) {
+				if ( MediaWikiServices::getInstance()
+					->getUserOptionsLookup()
+					->getBoolOption( $skin->getUser(), 'showhiddencats' )
+				) {
 					$hiddenCatClass[] = 'mw-hidden-cats-user-shown';
 				} elseif ( $skin->getTitle()->getNamespace() == NS_CATEGORY ) {
 					$hiddenCatClass[] = 'mw-hidden-cats-ns-shown';
@@ -990,10 +1084,10 @@ class TimelessTemplate extends BaseTemplate {
 		}
 
 		if ( $catList !== '' ) {
-			$html = $this->getSidebarChunk( 'catlinks-sidebar', $catHeader, $catList );
+			return $this->getSidebarChunk( 'catlinks-sidebar', $catHeader, $catList );
 		}
 
-		return $html;
+		return '';
 	}
 
 	/**
@@ -1009,7 +1103,7 @@ class TimelessTemplate extends BaseTemplate {
 	protected function getCatList( $list, $id, $class, $message ) {
 		$html = Html::openElement( 'div', [ 'id' => "sidebar-{$id}", 'class' => $class ] );
 
-		$makeLinkItem = function ( $linkHtml ) {
+		$makeLinkItem = static function ( $linkHtml ) {
 			return Html::rawElement( 'li', [], $linkHtml );
 		};
 
@@ -1022,9 +1116,7 @@ class TimelessTemplate extends BaseTemplate {
 
 		$html .= $this->getPortlet( $id, $categoriesHtml, $message );
 
-		$html .= Html::closeElement( 'div' );
-
-		return $html;
+		return $html . Html::closeElement( 'div' );
 	}
 
 	/**

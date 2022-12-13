@@ -1,7 +1,7 @@
 # mw-Timless (MediaWiki skin)
 Timeless strongly supports responsive web design and is optimized for a multitude of screen widths ranging from narrow mobile phone screens up to wide monitors. 
 
-The skin is based on Winter.
+Official Url: https://www.mediawiki.org/wiki/Skin:Timeless
 
 ## Installation
 Download and add to "LocalSettings.php"
@@ -45,7 +45,9 @@ Major items are displayed using icons instead of text to save space.
 
 ## Version History
 
-Version 1.0 (MediaWiki 1.39.x LTS, , with modifications)
+#### Version 1.0
+	MediaWiki Version: 1.39.x LTS
+	Author: Melissa Janine Newman (Proactive Programming)
 
 The following changes are differences from the standard 
 MediaWiki 1.39.x Timeless skin.  Original author did not update the 
@@ -57,14 +59,18 @@ version number with the new MediaWiki LTS version.
 - Changed to be only 1 column wide.
 - Removed mid and large screen options, so we can have the maximum amount of space for the articles.  Why valuable screen space with side menus when we can use that space for actual article data?
 
-Version 0.9.1 (MediaWiki, 1.39.x LTS, 2020-09-25)
+#### Version 0.9.1
+	MediaWiki Version: 1.39.x LTS
+	Author: Isarra Yos
 
 Original author did not update the version number even though
 the source code was updated for MediaWiki 1.39.x.
 
 - Fixed calls to "user" class to be compatible with MediaWiki 1.39.x
 
-Version 0.9.1 (MediaWiki, 1.35.x LTS, 2020-09-25)
+#### Version 0.9.1
+	MediaWiki Version: 1.35.x LTS
+	Author: Isarra Yos
 
 - Original version.  See MediaWiki for details.
 
